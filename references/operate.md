@@ -172,9 +172,10 @@ Conversions and revenue from the DB, with the window stated.
 
 `paid_predicate` defines a paid row; `new_conversion_predicate`
 defines a *funnel conversion* (renewals are revenue, not conversions —
-report them separately). Revenue is `amount_column` (divided by
-`100.0` when `amount_is_cents`) or `count * unit_price` when
-`amount_column` is empty. If both `amount_column` and `unit_price` are empty, report
+report them separately). Revenue follows `amount_source`:
+`column` (divide by `100.0` when `amount_is_cents`), `unit_price`
+(`count * unit_price`), or `derived` (join the plan tier to the price
+map recorded in `ANALYTICS.md`). Never guess a price. If both `amount_column` and `unit_price` are empty, report
 conversion count only and list revenue as a data gap. Show currency.
 Show `n`.
 

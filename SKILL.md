@@ -55,6 +55,25 @@ mapping and the stages, and `ANALYTICS.md` points at it.
 Ten steps, in order. Each has a completion criterion. Do not skip ahead
 to instrumentation.
 
+### 0. Check for prior work
+
+Before discovering anything, look for an existing `ANALYTICS.md` (root,
+backend, or named in `CLAUDE.md` / `AGENTS.md`).
+
+If one exists it usually already contains the vendor list, the wrapper
+path, and the event catalogue — the output of steps 3, 4, 5 and 10.
+**Switch to verify-and-diff:** read it, then confirm each claim against
+the code and report only what has drifted (an event that no longer
+fires, a component calling `gtag`/`fbq` directly instead of the
+wrapper, a vendor added or removed). Rediscovering from scratch and
+overwriting a hand-written file that is better than your template is a
+regression, not setup.
+
+Steps 1–7 below then become verification passes rather than discovery.
+
+**Done when:** you have either found no prior doc, or listed the
+specific drifts between the existing doc and the code.
+
 ### 1. Identify the tree
 
 Decide: frontend, backend, monorepo, or unknown.
@@ -71,12 +90,18 @@ say so and keep looking in step 2 rather than guessing a stack name.
 Client-side events never contain purchase truth. The payment webhook
 lives on the backend.
 
-Search, in this order:
+Do not look for two fixed paths. Look for the **markers**, at any
+depth inside this repo and one level up:
 
-1. `backend/` inside this repo
-2. `../<name>-backend` next to this repo
-3. Nested repos that `.gitignore` mentions which actually exist on disk
-4. Paths already named in `ANALYTICS.md`, `CLAUDE.md`, or `AGENTS.md`
+- a payment webhook handler (`*webhook*`, `razorpay`, `stripe`)
+- database migrations (`migrations/`, `supabase/`, `prisma/`)
+- serverless/edge function directories (`functions/`, `api/`)
+
+Then check, in this order: nested directories at any depth (a backend
+named `<product>-backend/backend/` is common and matches no fixed
+pattern), `../<name>-backend` next to this repo, nested repos named in
+`.gitignore` that exist on disk, and paths already named in
+`ANALYTICS.md` / `CLAUDE.md` / `AGENTS.md`.
 
 If the other half is missing, **state explicitly what cannot be
 instrumented**. That is almost always `purchase`, which belongs on the
@@ -115,10 +140,23 @@ proposal to create it.
 Read routes, the checkout flow, payment webhooks, and event names
 already firing. Propose **at most 8 stages** from landing to paid.
 
-Map each stage to an event they already fire where possible. Identify
-only **1–3 real gaps** — things that happen in the UI/backend with no
+Map each stage to an event they already fire where possible.
+
+**One funnel, one population.** If the product has two entry paths (a
+main flow and a recovery/win-back flow) or two audiences on the same
+code, do not blend them into eight stages — doctrine forbids mixing
+populations. Map the primary path, name the excluded one explicitly in
+the confirmation, and record the filter that separates them as the
+stage's `where`.
+
+Identify only **1–3 real gaps** — things that happen in the UI/backend with no
 event. Do not invent a twelve-step marketing funnel. Do not ask the
 human to name the stages.
+
+A vendor's automatic event (GA4's `page_view`, the Pixel's
+`PageView`) counts as "already fires" even though it appears in no
+catalogue and no wrapper call — note where it comes from so the human
+is not confused when they cannot grep it.
 
 **Done when:** you can list the proposed stages, the existing event
 each maps to (or `source: money` for paid), and the 1–3 gaps.
@@ -141,6 +179,12 @@ Two traps:
   payment (`billing_reason = 'subscription_create'`, `is_first = true`,
   or a distinct `user_id` on their earliest row) and record it as
   `new_conversion_predicate`.
+- **The amount is not on the row.** Common: price lives in a config
+  table or a JSON blob, and the row only carries a plan tier
+  (`plan = 'pro'`). Record `amount_source: derived` and write down the
+  join or lookup in plain words, plus the tier→price map. Confirm the
+  prices with the human in step 8 — they are the one person who knows
+  what they actually charge.
 - **No timestamp.** A bare `users.is_paid` boolean has no time on it,
   so no windowed report is possible. Look for `paid_at` / `updated_at`
   / a payments row. If there is genuinely no timestamp, say plainly
@@ -163,23 +207,36 @@ unmapped and the ceiling that creates.
 Find the read-only access path that **already exists** in this
 environment. Do not install anything.
 
-Check for: `psql $DATABASE_URL`, `supabase` CLI, `npx prisma db
-execute`, `sqlite3 <file>`, a `DATABASE_URL` in `.env`, analytics-vendor
-credentials, an MCP server for traffic data (GA4 etc.).
+Check for: `psql $DATABASE_URL`, the `supabase` CLI, PostgREST with a
+project URL + key, `npx prisma db execute`, `sqlite3 <file>`, a
+`DATABASE_URL` in `.env`, analytics-vendor credentials, an MCP server
+for the database or for traffic (GA4 etc.).
+
+There may be no `DATABASE_URL` and no `psql` at all — a hosted-Postgres
+project key over REST is a perfectly good read path. Record whatever
+actually works.
 
 **Test it before you record it.** Run `SELECT 1` (or the vendor's
 cheapest call). A command that exists but cannot connect — firewall,
 missing role, expired key — leaves `/ask` dead on arrival, and you
 will not find out until the user asks their first question.
 
-Also settle **which database this is**. A `DATABASE_URL` pointing at
-localhost or a `dev.sqlite` file is not production. Record it in
-`access.db_env`. Reporting local seed data as real revenue is the
+Also settle **which database this is**. Localhost or a `dev.sqlite`
+file is obviously not production — but with hosted databases every
+environment looks identical, and the only signal is the project
+ref/host in the URL. Read it, and check it against whatever the repo's
+docs call production; stale refs for abandoned projects linger in env
+files. If you cannot tell, record `unknown` and say so rather than
+guessing. Record it in `access.db_env`. Reporting local seed data as real revenue is the
 worst failure this skill can produce, because it looks like success.
 
-**Check the role is read-only.** If the connection can write, say so
-out loud and recommend a read-only role or a replica. Do not proceed
-silently on a superuser connection string.
+**Check the role is read-only.** Often the only credential in the repo
+is a service-role / admin key that bypasses row-level security and can
+write. Say so out loud — do not proceed silently on it. In order of
+preference: ask for a read-only role or replica; failing that, restrict
+every query to existing aggregate views if the project ships them
+(`v_*` views, an ops SQL catalogue); failing that, warn plainly and
+query aggregates only.
 
 Record the verdict into `access.db` and `access.traffic` — this is
 what makes `/ask` work later without re-discovery.

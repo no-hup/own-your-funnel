@@ -56,6 +56,10 @@ sources:
     new_conversion_predicate: ""
     # Revenue column, e.g. "amount_cents". Empty -> count * unit_price
     amount_column: ""
+    # "column" | "unit_price" | "derived". Use "derived" when price is not
+    # on the row (a plan tier joined to a config table / price map).
+    # Describe the lookup in ANALYTICS.md and confirm the prices with the human.
+    amount_source: ""
     # true if amount_column is minor units (cents/paise). Divide by 100.0,
     # never 100 — integer division silently drops the decimals.
     amount_is_cents: false

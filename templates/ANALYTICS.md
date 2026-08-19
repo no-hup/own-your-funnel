@@ -3,6 +3,9 @@
 Written by own-your-funnel during setup. Next session: read this
 and `funnel.yaml` instead of re-discovering the tree.
 
+If you are an agent and this file already exists, do not overwrite it.
+Verify each claim below against the code and report what has drifted.
+
 Confirmed by human: `<confirmation-date>` (mirrors `confirmed_on` in
 `funnel.yaml`; if that file says `confirmed: false`, setup is not done
 and `/ask` and `/report` must refuse).
@@ -36,7 +39,9 @@ Canonical mapping: `<path-to-funnel.yaml>`
 Stages (confirmed): `<stage-names-in-order>`
 
 Money: a paid conversion is a row in `<sources.money.table>` where
-`<sources.money.paid_predicate>`. Revenue is
+`<sources.money.paid_predicate>`. Price map (only when
+`amount_source: derived`): `<tier -> price, currency, where it is
+configured>`. Revenue is
 `<amount_column-or-count-times-unit_price>` in
 `<sources.money.currency>`. Timestamp:
 `<sources.money.timestamp_column>`.
