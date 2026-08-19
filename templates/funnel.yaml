@@ -1,0 +1,101 @@
+# funnel.yaml — the only mapping own-your-funnel is allowed to query.
+#
+# The human MUST confirm the money mapping and the stages before this
+# file is treated as truth. The operator refuses to query any table or
+# column that is not listed here. Guessing column names is how invented
+# numbers start.
+#
+# Fill this in during setup, then stop for confirmation. Do not let the
+# agent "fix" keys later without asking.
+
+# Set to true ONLY after a human has read and confirmed the money
+# mapping and the stages below. /ask and /report refuse to run while
+# this is false.
+confirmed: false
+confirmed_on: ""
+
+# Short name of the product, e.g. "invoice-maker"
+product: ""
+
+# IANA timezone for report windows, e.g. "America/Los_Angeles"
+timezone: ""
+
+repos:
+  # Path to the frontend, "." if this repo is it
+  frontend: ""
+  # Path to the backend, e.g. "../app-backend". Empty if there isn't one
+  backend: ""
+
+# Analytics vendors already in the repo. Never add one to fill this.
+# Examples: [ga4, meta-pixel, posthog]
+vendors_detected: []
+
+access:
+  # Exact read-only command already available, e.g. "psql $DATABASE_URL -c"
+  # Use "none" if there is no DB access from this environment.
+  # Setup must actually run SELECT 1 through this before writing it here.
+  db: ""
+  # "production" | "local" | "unknown" — which database that command hits.
+  # Numbers from a local/dev copy must be labelled non-production.
+  db_env: ""
+  # true if that connection is a read-only role or a replica.
+  # false means nothing but this file's rules stops a write.
+  db_readonly: false
+  # How to pull traffic data: "ga4-mcp" | "ga4-service-account" | "none"
+  traffic: ""
+
+sources:
+  money:
+    # Orders/payments table that is ground truth for revenue, e.g. "orders"
+    table: ""
+    # SQL WHERE that means "this row is paid", e.g. "status = 'paid'"
+    paid_predicate: ""
+    # Recurring billing only: WHERE that means "this is a FIRST payment",
+    # e.g. "billing_reason = 'subscription_create'". Renewals are revenue
+    # but not funnel conversions. Empty if the product is one-off purchase.
+    new_conversion_predicate: ""
+    # Revenue column, e.g. "amount_cents". Empty -> count * unit_price
+    amount_column: ""
+    # true if amount_column is minor units (cents/paise). Divide by 100.0,
+    # never 100 — integer division silently drops the decimals.
+    amount_is_cents: false
+    # Used only when amount_column is empty, e.g. 29. Otherwise null
+    unit_price: null
+    # e.g. "USD"
+    currency: ""
+    # When the payment happened, e.g. created_at
+    timestamp_column: created_at
+  # Optional. Journeys / step-level drop-off need this or a row-level vendor
+  # (PostHog / Mixpanel / Amplitude / Heap) already installed.
+  # Leave table empty if you do not have a first-party events table.
+  events:
+    # First-party events table, e.g. "app_events"
+    table: ""
+    # Timestamp column on that table
+    ts: ""
+    # Logged-in user id. NULL before signup — that is expected.
+    user_id: ""
+    # Device/anonymous id, used for stages that happen BEFORE signup.
+    # Without this the whole top of the funnel drops out silently.
+    anonymous_id: ""
+    # Column that holds the event name
+    event_name: ""
+    # Optional page/path column; empty if there isn't one
+    page: ""
+
+# At most 8 steps from landing to paid. Map to events you already fire
+# where possible. A paid stage uses source: money, not a pixel event.
+stages:
+  # Human-readable stage name, e.g. landing / signup / checkout / paid
+  - name: landing
+    # Event that means this stage happened, e.g. page_view
+    event: page_view
+    # Extra filter, e.g. "page = '/'", or null
+    where: null
+  # Last stage is almost always paid, counted from the money table
+  - name: paid
+    # Count this stage from sources.money, not from a client event
+    source: money
+
+# Path to the manual change ledger (pricing, ads, paywall, landing)
+annotations: annotations.md
