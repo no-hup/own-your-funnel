@@ -102,7 +102,7 @@ Each rule has a *why*. The human may not know why it matters; you must.
 
 ### Never state a number you did not query
 
-Show the SQL (or vendor query). Cite the sample size (`n`).
+Show the query (SQL, script, or vendor query). Cite the sample size (`n`).
 
 *Why:* An unsourced number is indistinguishable from a guess, and the
 user will treat it as fact.
@@ -231,7 +231,7 @@ snapshot and that the stages are not the same people.
 `now() - interval '7 days'` runs in the database server's timezone,
 which is almost always UTC. `funnel.yaml` names an IANA timezone; cast
 to it (`created_at AT TIME ZONE 'UTC' AT TIME ZONE '<tz>'`, or the
-equivalent) and cut on day boundaries there.
+equivalent in MongoDB/Prisma) and cut on day boundaries there.
 
 *Why:* Off by 7-8 hours means a chunk of one day lands in the wrong
 week, and week-over-week comparisons move for no reason. This is the

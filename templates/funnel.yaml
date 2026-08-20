@@ -31,9 +31,9 @@ repos:
 vendors_detected: []
 
 access:
-  # Exact read-only command already available, e.g. "psql $DATABASE_URL -c"
+  # Exact read-only command already available, e.g. "psql $DATABASE_URL -c" or "mongosh --eval"
   # Use "none" if there is no DB access from this environment.
-  # Setup must actually run SELECT 1 through this before writing it here.
+  # Setup must actually run SELECT 1 (or db.ping()) through this before writing it here.
   db: ""
   # "production" | "local" | "unknown" — which database that command hits.
   # Numbers from a local/dev copy must be labelled non-production.
@@ -46,11 +46,11 @@ access:
 
 sources:
   money:
-    # Orders/payments table that is ground truth for revenue, e.g. "orders"
+    # Orders/payments table/collection that is ground truth for revenue, e.g. "orders"
     table: ""
-    # SQL WHERE that means "this row is paid", e.g. "status = 'paid'"
+    # Condition that means "this row is paid", e.g. "status = 'paid'" (SQL) or "{status: 'paid'}" (Mongo)
     paid_predicate: ""
-    # Recurring billing only: WHERE that means "this is a FIRST payment",
+    # Recurring billing only: condition that means "this is a FIRST payment",
     # e.g. "billing_reason = 'subscription_create'". Renewals are revenue
     # but not funnel conversions. Empty if the product is one-off purchase.
     new_conversion_predicate: ""

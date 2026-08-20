@@ -48,9 +48,10 @@ then stop. Do not expand into a report.
 4. **Run it read-only** via `access.db` (or the traffic method in
    `access.traffic`). If `access.db` is `none` and the question needs
    the DB, say so and stop. Do not try a write tool. Do not save query
-   results to disk.
+   results to disk. Use whatever query language matches the database
+   (SQL, MongoDB aggregation pipeline, Prisma, etc.).
 5. **Answer** with all four of:
-   - the SQL (or vendor query) you ran
+   - the query (SQL, script, or vendor query) you ran
    - the numbers
    - the sample size (`n`)
    - the one relevant caveat from doctrine (disagreement, small
@@ -76,6 +77,7 @@ WHERE status = 'paid'
   AND created_at >= (now() AT TIME ZONE 'America/Los_Angeles')::date
                     - interval '7 days';  -- window cut in the funnel.yaml tz
 ```
+(Or the equivalent MongoDB aggregation / ORM query depending on the stack)
 
 23 paid rows (`n=23`) in the last 7 days, timezone `America/Los_Angeles`
 as in `funnel.yaml`. **Confirmed** count of DB-paid. Caveat: this is

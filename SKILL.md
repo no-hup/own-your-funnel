@@ -207,16 +207,17 @@ unmapped and the ceiling that creates.
 Find the read-only access path that **already exists** in this
 environment. Do not install anything.
 
-Check for: `psql $DATABASE_URL`, the `supabase` CLI, PostgREST with a
-project URL + key, `npx prisma db execute`, `sqlite3 <file>`, a
-`DATABASE_URL` in `.env`, analytics-vendor credentials, an MCP server
-for the database or for traffic (GA4 etc.).
+Check for: `psql $DATABASE_URL`, `mongosh $MONGO_URL`, the `supabase` CLI,
+PostgREST with a project URL + key, `npx prisma db execute`, `sqlite3 <file>`,
+local Python or Node scripts that load credentials, a `DATABASE_URL` or `MONGO_URL`
+in `.env`, analytics-vendor credentials, or an MCP server.
+For non-SQL databases like MongoDB, document how to run an aggregation pipeline or
+equivalent script.
 
-There may be no `DATABASE_URL` and no `psql` at all — a hosted-Postgres
-project key over REST is a perfectly good read path. Record whatever
-actually works.
+There may be no `DATABASE_URL` and no CLI at all — a hosted project key over REST is a
+perfectly good read path. Record whatever actually works.
 
-**Test it before you record it.** Run `SELECT 1` (or the vendor's
+**Test it before you record it.** Run `SELECT 1` or `db.command({ping: 1})` (or the vendor's
 cheapest call). A command that exists but cannot connect — firewall,
 missing role, expired key — leaves `/ask` dead on arrival, and you
 will not find out until the user asks their first question.
@@ -341,17 +342,17 @@ from it without repeating steps 1–7.
 - Never query a table or column that is not in `funnel.yaml`. Ask the
   human to extend the file instead.
 - Everything against the user's database is **read-only**. No writes,
-  no migrations, no `DELETE`, no `DROP`, no `UPDATE` — not even to
+  no migrations, no `DELETE`, `DROP`, `UPDATE`, or `updateMany` — not even to
   "fix" something you noticed. Prefer a read-only role; wrap sessions
   in `BEGIN TRANSACTION READ ONLY` where the database supports it, and
-  put a `LIMIT` on anything that is not an aggregate.
-- **Query aggregates, not rows.** `count()`, `sum()`, `percentile`. Do
-  not `SELECT *`, and do not pull raw user rows into the conversation.
-  Query results enter the agent's context, which means they are sent
+  put a limit on anything that is not an aggregate.
+- **Query aggregates, not rows.** SQL `count()`, `sum()`, Mongo `$group`. Do
+  not `SELECT *` or `db.collection.find()`, and do not pull raw user rows into the
+  conversation. Query results enter the agent's context, which means they are sent
   to whichever AI provider is running this skill. Aggregates keep that
   boundary clean; raw rows do not.
 - Never run `/ask` or `/report` while `funnel.yaml` has
   `confirmed: false`. Go finish setup step 8.
-- Never state a number you did not query. Show the SQL. Cite `n`.
+- Never state a number you did not query. Show the SQL or script you ran. Cite `n`.
 - Full judgment rules: `references/doctrine.md`.
 - Operating procedures for `/ask` and `/report`: `references/operate.md`.

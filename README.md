@@ -28,12 +28,12 @@ That is the whole interface.
 Worth being straight about, because most tools this shape are not.
 
 The skill is markdown — it has no server and phones nothing home. But
-the agent runs SQL against your database and reads the results, and
-those results go into the model's context, which means they are sent
-to whichever AI provider you run this with (Anthropic, Google, OpenAI).
+the agent runs queries (SQL, Mongo aggregations, Prisma, etc.) against your database
+and reads the results, and those results go into the model's context, which means
+they are sent to whichever AI provider you run this with (Anthropic, Google, OpenAI).
 
-So the rules it follows: query aggregates only (`count`, `sum`,
-medians), never `SELECT *`, never pull raw customer rows, never write
+So the rules it follows: query aggregates only (`count`, `sum`, Mongo `$group`),
+never `SELECT *` or `db.collection.find()`, never pull raw customer rows, never write
 to your database, never send emails or phone numbers to an analytics
 vendor. Point it at a read-only role and it cannot do damage even if
 it tries.
@@ -67,7 +67,7 @@ You will not be asked "what's your funnel?" You will be asked something
 like: *I think a paid conversion is a row in `orders` where
 `status='paid'`, and revenue is `amount_cents/100`. Correct?*
 
-After that, `/ask` answers one question with SQL shown, and `/report`
+After that, `/ask` answers one question with the query (SQL, Mongo, etc.) shown, and `/report`
 writes `reports/YYYY-MM-DD.md`.
 
 ### What setup sounds like
