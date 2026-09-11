@@ -49,3 +49,7 @@ Once `funnel.yaml` is confirmed, use these commands:
 ## License
 
 MIT © 2026 Shaurya.
+
+---
+
+If this got you answers out of your own data, a star helps other people find it.
